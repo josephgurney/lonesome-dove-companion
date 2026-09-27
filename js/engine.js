@@ -84,6 +84,7 @@
       return { img: A.sprite.side(a.who, who.c, f), ax: 10, ay: 26, sw: 6 };
     }
     if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
+    if (a.kind === 'bear') return { img: A.sprite.bear(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 20, ay: 25, sw: 13 };
     if (a.kind === 'goat') return { img: A.sprite.goat(a.cfg || {}, a.moving ? Math.floor(a.dist / 3) % 2 : 0), ax: 8, ay: 12, sw: 4 };
     if (a.kind === 'chicken') return { img: A.sprite.chicken(a.cfg || {}, a.moving ? Math.floor(a.dist / 2) % 2 : 0), ax: 5, ay: 9, sw: 3 };
     if (a.kind === 'boat') return { img: A.sprite.boat(), ax: 43, ay: 27, sw: 0 };
@@ -102,17 +103,20 @@
     if (a.kind === 'horse') return 30;
     if (a.kind === 'cow') return 16;
     if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
+    if (a.kind === 'bear') return { img: A.sprite.bear(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 20, ay: 25, sw: 13 };
     if (a.kind === 'goat') return { img: A.sprite.goat(a.cfg || {}, a.moving ? Math.floor(a.dist / 3) % 2 : 0), ax: 8, ay: 12, sw: 4 };
     if (a.kind === 'chicken') return { img: A.sprite.chicken(a.cfg || {}, a.moving ? Math.floor(a.dist / 2) % 2 : 0), ax: 5, ay: 9, sw: 3 };
     if (a.kind === 'boat') return { img: A.sprite.boat(), ax: 43, ay: 27, sw: 0 };
     if (a.kind === 'team') return 18;
     if (a.kind === 'boat') return 8;
     if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
+    if (a.kind === 'bear') return { img: A.sprite.bear(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 20, ay: 25, sw: 13 };
     if (a.kind === 'goat') return { img: A.sprite.goat(a.cfg || {}, a.moving ? Math.floor(a.dist / 3) % 2 : 0), ax: 8, ay: 12, sw: 4 };
     if (a.kind === 'chicken') return 12;
     if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
     if (a.kind === 'goat') return 14;
     if (a.kind === 'buffalo') return 20;
+    if (a.kind === 'bear') return 22;
     if (a.kind === 'pig') return 14;
     return 10;
   }
@@ -318,6 +322,13 @@
       for (let i = 0; i < 160; i++) { const x = (i * 71 + clock * 20) % W, y = ((i * 131) % H + clock * 330 + i * 11) % H; lctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
       lctx.fillStyle = 'rgba(240,245,250,0.8)';
       for (let i = 0; i < 90; i++) { const x = (i * 97) % W, y = (i * 53) % H; lctx.fillRect(x, y, 1, 1); }
+    }
+    if (w.snow) {
+      const heavy = w.snow === 'blizzard';
+      lctx.fillStyle = heavy ? 'rgba(220,228,240,0.45)' : 'rgba(200,210,230,0.12)'; lctx.fillRect(0, 0, W, H);
+      lctx.fillStyle = 'rgba(255,255,255,0.9)';
+      const n = heavy ? 260 : 90;
+      for (let i = 0; i < n; i++) { const x = (i * 61 + clock * (heavy ? 120 : 10) + Math.sin(clock + i) * 6) % W, y = ((i * 97) % H + clock * (heavy ? 60 : 24) + i * 5) % H; lctx.fillRect(Math.round(x), Math.round(y), heavy ? 2 : 1, heavy ? 1 : 1); }
     }
     if (w.hoppers) {
       lctx.fillStyle = 'rgba(90,70,30,0.35)'; lctx.fillRect(0, 0, W, H);

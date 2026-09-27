@@ -864,4 +864,5 @@
       ] },
     ],
   });
+  Object.assign(window.STORYKIT, { town, plains, campN, L });
 })();

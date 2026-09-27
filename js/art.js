@@ -259,6 +259,15 @@
     [10, 13, 21, 24].forEach((x, i) => { P.r(x + sw[i], oy + 15, 2, 4, i % 2 ? c : dk); P.r(x + sw[i], oy + 19, 2, 1, '#1a1008'); });
     return outline(C);
   }
+  function bear(k, f) {
+    const C = cv(40, 26), P = pen(C.getContext('2d')), oy = 3;
+    const c = k.coat || '#a0602e', dk = shade(c, -0.3), lt = shade(c, 0.18);
+    P.r(7, oy + 6, 22, 10, c); P.r(9, oy + 4, 16, 2, c); P.r(12, oy + 3, 10, 1, lt); P.r(9, oy + 5, 14, 1, lt);
+    P.r(27, oy + 7, 7, 7, c); P.r(33, oy + 10, 3, 3, dk); P.p(35, oy + 11, '#1a1008'); P.p(31, oy + 9, '#1a1008'); P.r(28, oy + 5, 2, 2, dk); P.r(31, oy + 5, 2, 2, dk);
+    const sw = [[0, 0, 0, 0], [1, -1, -1, 1], [0, 0, 0, 0], [-1, 1, 1, -1]][f];
+    [9, 13, 23, 27].forEach((x, i) => { P.r(x + sw[i], oy + 16, 3, 4, i % 2 ? c : dk); P.r(x + sw[i], oy + 20, 3, 1, '#2a1a10'); });
+    return outline(C);
+  }
   function goat(k, f) {
     const C = cv(16, 13), P = pen(C.getContext('2d'));
     const c = k.coat || '#e0dcd0', dk = shade(c, -0.25);
@@ -285,6 +294,16 @@
 
   function team(o, f) {
     const C = cv(84, 36), ctx = C.getContext('2d');
+    if (o.buggy) {
+      const P = pen(ctx);
+      P.r(4, 18, 36, 5, '#5a3a20'); P.r(4, 18, 36, 1, '#7a5230');
+      P.r(6, 8, 30, 10, o.canvas ? '#c8bea4' : '#8a6a44'); P.r(6, 8, 30, 2, o.canvas ? '#e0d8c0' : '#a88458'); P.r(20, 8, 1, 10, o.canvas ? '#a89c80' : '#6a4a2e');
+      [[10, 24], [34, 24]].forEach(([x, y]) => { P.r(x - 5, y - 5, 11, 11, '#3a2616'); P.r(x - 4, y - 4, 9, 9, '#8a6a44'); P.r(x - 1, y - 1, 3, 3, '#3a2616'); });
+      outline(C);
+      ctx.drawImage(horse(o.m1 || { coat: '#6a4a2e', mule: true }, f), 40, 10);
+      ctx.fillStyle = '#4a2a18'; ctx.fillRect(38, 24, 8, 1);
+      return C;
+    }
     const wg = A.prop(o.chuck ? 'wagon' : 'wagon', {});
     ctx.drawImage(wg, 0, 2);
     const m1 = horse(o.m1 || { coat: '#8e8e8a', mule: true }, f), m2 = horse(o.m2 || { coat: '#7a4a2a', mule: true }, (f + 2) % 4);
@@ -305,6 +324,7 @@
     chicken: (k, f) => memo(`ck:${k.coat}:${f}`, () => chicken(k, f)),
     boat: () => memo('boat', () => boat()),
     buffalo: (k, f) => memo(`bf:${k.coat}:${f}`, () => buffalo(k, f)),
+    bear: (k, f) => memo(`br:${k.coat}:${f}`, () => bear(k, f)),
     goat: (k, f) => memo(`g:${k.coat}:${f}`, () => goat(k, f)),
     dillo: (f) => memo(`d:${f}`, () => dillo(f)),
   };
@@ -491,6 +511,51 @@
     stump(o) {
       const C = cv(12, 9), P = pen(C.getContext('2d'));
       P.r(2, 2, 8, 6, '#7a5234'); P.r(2, 2, 8, 2, '#c8a870'); P.r(4, 2, 3, 1, '#a88858'); P.r(0, 7, 3, 1, '#6a4428'); P.r(9, 7, 3, 1, '#6a4428');
+      return outline(C);
+    },
+    tepee(o) {
+      const C = cv(26, 30), P = pen(C.getContext('2d'));
+      for (let y = 0; y < 26; y++) { const w = 2 + y * 0.85 | 0; P.r(13 - (w >> 1), y + 3, w, 1, y % 6 === 5 ? '#8a7a5a' : '#c8b490'); }
+      P.r(11, 0, 1, 5, '#5a3a20'); P.r(14, 0, 1, 5, '#5a3a20'); P.r(11, 20, 5, 9, '#3a2a1e');
+      if (o.ragged) { P.r(4, 24, 3, 2, 'rgba(0,0,0,0)'); P.r(17, 14, 3, 2, '#a89a74'); }
+      return outline(C);
+    },
+    framehouse(o) { // Clara's two-storey frame house with an upper porch
+      const C = cv(70, 76), P = pen(C.getContext('2d'));
+      shingles(P, 2, 0, 66, 22, '#6e5a4a', 23);
+      planksH(P, 4, 22, 62, 50, '#e8e0cc'); P.r(4, 22, 62, 1, '#b8ac94');
+      window_(P, 10, 27, 9, 9, o.lit); window_(P, 50, 27, 9, 9, o.lit); window_(P, 10, 50, 9, 9, o.lit); window_(P, 50, 50, 9, 9, o.lit);
+      P.r(22, 38, 26, 3, '#8a7a64'); for (let x = 23; x < 48; x += 4) P.r(x, 33, 1, 5, '#8a7a64'); P.r(22, 33, 26, 1, '#8a7a64');
+      P.r(30, 27, 8, 11, '#5a4a3a'); P.r(30, 56, 9, 16, '#6a4a30'); P.p(37, 64, '#e0c070');
+      P.r(0, 70, 70, 4, '#a89878'); P.r(28, 72, 14, 4, '#b8a888');
+      return outline(C);
+    },
+    courthouse(o) { // three storeys, gallows on the roof
+      const C = cv(64, 96), P = pen(C.getContext('2d'));
+      P.r(4, 14, 56, 80, '#c8a888'); const r = rng(29); for (let i = 0; i < 60; i++) P.p(4 + r() * 56 | 0, 14 + (r() * 80 | 0), '#b09070');
+      for (let fl = 0; fl < 3; fl++) for (let i = 0; i < 4; i++) window_(P, 9 + i * 13, 22 + fl * 22, 8, 12, false);
+      P.r(4, 14, 56, 2, '#e0c8a8'); P.r(26, 78, 12, 16, '#4a3020');
+      P.r(20, 0, 2, 14, '#5a3a20'); P.r(40, 0, 2, 14, '#5a3a20'); P.r(18, 0, 26, 2, '#5a3a20'); P.r(30, 2, 1, 6, '#c8b890');
+      if (o.broken) { P.r(22, 22, 8, 12, '#1a1008'); P.p(24, 26, '#e0f0f4'); P.p(28, 30, '#e0f0f4'); }
+      return outline(C);
+    },
+    mountains(o) { // snow-capped range across the top of a scene
+      const w = o.w || 460, C = cv(w, 70), P = pen(C.getContext('2d')), r = rng(o.seed || 41);
+      let x = -20;
+      while (x < w + 20) { const pw = 50 + r() * 60, ph = 40 + r() * 28, base = 68;
+        for (let y = 0; y < ph; y++) { const half = (y / ph) * pw / 2, top = base - ph + y; P.r(x + pw / 2 - half | 0, top, half * 2 | 0, 1, y < ph * (o.snow === false ? 0 : 0.32) ? '#f0f2f6' : (y % 7 === 0 ? '#5e6a80' : '#6e7a90')); }
+        x += pw * 0.6; }
+      return outline(C);
+    },
+    coffin(o) {
+      const C = cv(26, 12), P = pen(C.getContext('2d'));
+      P.r(1, 2, 24, 8, '#7a5234'); P.r(1, 2, 24, 2, '#9a6a44'); P.r(4, 5, 18, 1, '#5a3a20');
+      return outline(C);
+    },
+    burned(o) { // the burned-out Dry Bean
+      const C = cv(64, 40), P = pen(C.getContext('2d')), r = rng(37);
+      P.r(0, 26, 64, 12, '#3a2e26'); for (let i = 0; i < 70; i++) P.r(r() * 62 | 0, 20 + (r() * 18 | 0), 3, 1, r() < 0.5 ? '#2a2018' : '#5a4636');
+      P.r(2, 4, 3, 24, '#2a2018'); P.r(58, 8, 3, 20, '#2a2018'); P.r(28, 12, 3, 16, '#2a2018'); P.r(2, 4, 12, 2, '#2a2018');
       return outline(C);
     },
     tent(o) {

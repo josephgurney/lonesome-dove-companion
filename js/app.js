@@ -84,7 +84,7 @@
     els.pips.innerHTML = '';
     ch.beats.forEach((_, i) => { const p = document.createElement('span'); p.className = 'pip' + (i < cur.b ? ' done' : i === cur.b ? ' now' : ''); els.pips.appendChild(p); });
     const last = cur.c === CH.length - 1 && cur.b === ch.beats.length - 1;
-    els.next.textContent = playing ? 'Skip \u25B8\u25B8' : cur.b === ch.beats.length - 1 ? (last ? 'End of draft' : 'Next chapter \u25B8') : 'Next \u25B8';
+    els.next.textContent = playing ? 'Skip \u25B8\u25B8' : cur.b === ch.beats.length - 1 ? (last ? 'The end' : 'Next chapter \u25B8') : 'Next \u25B8';
     els.next.disabled = !playing && last;
     els.prev.disabled = cur.c === 0 && cur.b === 0;
   }
