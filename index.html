@@ -2,6 +2,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lonesome Dove Companion</title>
 <meta name="theme-color" content="#2b1b12">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lonesome Dove">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Pixelify+Sans:wght@400;500;600;700&display=swap">
@@ -34,7 +40,7 @@
     font-family: var(--pixel);
     font-size: 16px;
     padding-inline: 12px;
-    padding-block: 6px 6px;
+    padding-block: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
   }
@@ -180,3 +186,9 @@
 <script src="js/part2b.js" charset="utf-8"></script>
 <script src="js/part3.js" charset="utf-8"></script>
 <script src="js/app.js" charset="utf-8"></script>
+<script>
+  // Offline support when installed from its own web address (not inside the Claude viewer).
+  if ('serviceWorker' in navigator && !/claude|anthropic/.test(location.hostname) && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
