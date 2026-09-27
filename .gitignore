@@ -1,0 +1,5 @@
+# The novel itself stays local: it's copyrighted and only used as a source.
+research/epub/
+research/book.txt
+research/chapters/
+.DS_Store

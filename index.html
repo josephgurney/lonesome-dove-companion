@@ -1,0 +1,180 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lonesome Dove Companion</title>
+<meta name="theme-color" content="#2b1b12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Pixelify+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --wood-0: #1c110b;
+    --wood-1: #2b1b12;
+    --wood-2: #4a2c18;
+    --wood-3: #7a4a24;
+    --wood-4: #a8683a;
+    --paper: #f4dcaa;
+    --paper-2: #e9c98c;
+    --paper-3: #d6ad6a;
+    --ink: #3a2412;
+    --ink-soft: #7a5230;
+    --rust: #b8452a;
+    --sage: #6d8a3a;
+    --pixel: 'Pixelify Sans', 'Courier New', monospace;
+    --western: 'Rye', 'Georgia', serif;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 44px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 1px, transparent 1px 7px),
+      var(--wood-1);
+    color: var(--paper);
+    font-family: var(--pixel);
+    font-size: 16px;
+    padding-inline: 12px;
+    padding-block: 6px 6px;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 560px; }
+
+  header.bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .brand { font-family: var(--western); font-size: 19px; letter-spacing: .04em; color: var(--paper); line-height: 1; text-shadow: 2px 2px 0 var(--wood-0); }
+  .brand small { display: block; font-family: var(--pixel); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--paper-3); margin-top: 4px; text-shadow: none; }
+
+  .btn {
+    font-family: var(--pixel); font-weight: 600; font-size: 15px; color: var(--ink);
+    background: var(--paper-2); border: 0; cursor: pointer; padding: 9px 14px;
+    box-shadow: inset 0 0 0 2px var(--wood-2), inset 0 -4px 0 0 var(--paper-3), 0 3px 0 0 var(--wood-0);
+    border-radius: 3px; min-height: 44px; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px var(--wood-2), inset 0 -2px 0 0 var(--paper-3), 0 1px 0 0 var(--wood-0); }
+  .btn:focus-visible { outline: 3px solid #ffe08a; outline-offset: 2px; }
+  .btn.primary { background: #f7c96a; box-shadow: inset 0 0 0 2px var(--wood-2), inset 0 -4px 0 0 #d69a3a, 0 3px 0 0 var(--wood-0); }
+  .btn[disabled] { opacity: .45; cursor: default; }
+
+  /* wooden frame, Stardew-style */
+  .frame { position: relative; flex: 1 1 auto; min-height: 280px; max-height: 760px; display: flex; background: var(--wood-3); padding: 5px; border-radius: 5px;
+    box-shadow: inset 0 0 0 2px var(--wood-0), inset 0 0 0 4px var(--wood-4), 0 4px 0 var(--wood-0); }
+  .stage { position: relative; flex: 1; width: 100%; max-width: 100%; overflow: hidden; background: #140c08; border-radius: 2px; box-shadow: 0 0 0 2px var(--wood-0); }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+  .overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .place {
+    position: absolute; left: 8px; top: 8px; z-index: 3; pointer-events: none;
+    background: rgba(28,17,11,.78); color: var(--paper); padding: 5px 9px 6px; border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(244,220,170,.25); max-width: calc(100% - 16px);
+  }
+  .stage.onmap .place { top: auto; bottom: 8px; }
+  .place b { display: block; font-family: var(--western); font-weight: 400; font-size: 13px; letter-spacing: .03em; }
+  .place span { font-size: 11px; color: var(--paper-3); letter-spacing: .06em; text-transform: uppercase; }
+
+  .bubble {
+    position: absolute; left: 0; top: 0; max-width: 62%; opacity: 0; transition: opacity .15s;
+    background: #fff4dc; color: var(--ink); font-size: 14px; line-height: 1.25; font-weight: 500;
+    padding: 6px 9px 7px; border-radius: 3px; box-shadow: 0 0 0 2px var(--ink), 0 3px 0 2px rgba(0,0,0,.25);
+  }
+  .bubble.in { opacity: 1; }
+  .bubble::after { content: ''; position: absolute; left: var(--tail, 50%); bottom: -7px; width: 8px; height: 8px; margin-left: -4px;
+    background: #fff4dc; box-shadow: 2px 2px 0 0 var(--ink); transform: rotate(45deg); }
+  .maplabel { position: absolute; left: 0; top: 0; white-space: nowrap; }
+  .maplabel.region { font-family: var(--western); font-size: 11px; letter-spacing: .18em; color: rgba(106,62,26,.62); }
+  .maplabel.place { font-size: 12px; font-weight: 700; color: var(--ink); background: rgba(244,220,170,.85); padding: 1px 4px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(58,36,18,.5); }
+
+  /* dialogue box */
+  .dialog { flex: none; background: var(--paper); color: var(--ink); border-radius: 4px; padding: 11px 12px; height: 168px; overflow-y: auto; box-sizing: border-box;
+    box-shadow: inset 0 0 0 2px var(--wood-2), inset 0 0 0 5px var(--paper-2), inset 0 0 0 7px var(--wood-2), 0 4px 0 var(--wood-0);
+    display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; cursor: pointer; }
+  .portrait { width: 64px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 3px; }
+  .portrait canvas { width: 64px; height: 64px; image-rendering: pixelated; background: var(--paper-2); border-radius: 3px; box-shadow: inset 0 0 0 2px var(--wood-3); }
+  .portrait .name { font-size: 12px; font-weight: 700; text-align: center; background: var(--wood-2); color: var(--paper); padding: 2px 6px; border-radius: 2px; max-width: 76px; }
+  .dialog.narrator .portrait { display: none; }
+  .dialog.narrator { grid-template-columns: 1fr; }
+  .text { font-size: 15.5px; line-height: 1.4; padding: 4px 4px 0; max-width: 62ch; min-height: 3em; }
+  .text .cursor { display: inline-block; width: .5em; height: .5em; margin-left: 4px; background: var(--rust); animation: blink .8s steps(2) infinite; vertical-align: middle; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .controls { flex: none; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+  .pips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .pip { width: 10px; height: 10px; background: var(--wood-2); box-shadow: inset 0 0 0 2px var(--wood-0); border-radius: 1px; }
+  .pip.done { background: var(--paper-3); }
+  .pip.now { background: #f7c96a; box-shadow: inset 0 0 0 2px var(--wood-0), 0 0 0 2px #f7c96a55; }
+
+  .chapterbtn { max-width: 58%; }
+  .chapterbtn .n { font-family: var(--western); font-weight: 400; font-size: 14px; }
+  .chapterbtn .t { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* chapter drawer */
+  .drawer { position: fixed; inset: 0; z-index: 20; background: rgba(12,7,4,.72); display: flex; justify-content: center; align-items: flex-end; padding-inline: 12px; padding-block: 0; }
+  .sheet { width: 100%; max-width: 620px; max-height: 82vh; overflow: auto; background: var(--paper); color: var(--ink); border-radius: 6px 6px 0 0;
+    box-shadow: inset 0 0 0 3px var(--wood-2); padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .sheet h2 { font-family: var(--western); font-weight: 400; font-size: 20px; margin: 0 0 4px; }
+  .sheet p.note { margin: 0 0 12px; font-size: 13px; color: var(--ink-soft); }
+  .chlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .chlist button { width: 100%; text-align: left; font-family: var(--pixel); background: var(--paper-2); border: 0; border-radius: 3px; padding: 9px 10px; color: var(--ink);
+    display: grid; grid-template-columns: 34px 1fr; gap: 10px; cursor: pointer; box-shadow: inset 0 0 0 2px var(--paper-3); min-height: 44px; }
+  .chlist button .num { font-family: var(--western); font-size: 17px; color: var(--rust); font-variant-numeric: tabular-nums; }
+  .chlist button b { display: block; font-size: 15px; }
+  .chlist button span { font-size: 12px; color: var(--ink-soft); }
+  .chlist button.cur { box-shadow: inset 0 0 0 3px var(--rust); }
+  .chlist button[disabled] { opacity: .5; cursor: default; }
+  .chlist .draftflag { font-size: 11px; color: var(--sage); text-transform: uppercase; letter-spacing: .08em; }
+
+  /* title card */
+  .titlecard { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center;
+    background: radial-gradient(ellipse at center, rgba(28,17,11,.35), rgba(28,17,11,.85)); padding-inline: 16px; }
+  .titlecard h1 { font-family: var(--western); font-weight: 400; font-size: clamp(28px, 8vw, 46px); margin: 0; color: var(--paper); text-shadow: 3px 3px 0 var(--wood-0); letter-spacing: .03em; line-height: 1; }
+  .titlecard p { margin: 0; font-size: 13px; color: var(--paper-2); letter-spacing: .1em; text-transform: uppercase; }
+  .foot { font-size: 12px; color: var(--paper-3); text-align: center; opacity: .8; padding-top: 4px; }
+  @media (prefers-reduced-motion: reduce) { .bubble { transition: none; } .text .cursor { animation: none; } }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">Lonesome Dove<small>Trail companion</small></div>
+    <button class="btn chapterbtn" id="chapterBtn" aria-haspopup="dialog">
+      <span class="n" id="chN">Ch. 1</span><span class="t" id="chT"></span>
+    </button>
+  </header>
+
+  <div class="frame">
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="Animated scene"></canvas>
+      <div class="overlay" id="overlay"></div>
+      <div class="place" id="place"><b id="placeName">Lonesome Dove, Texas</b><span id="placeWhen"></span></div>
+      <div class="titlecard" id="titlecard">
+        <h1>Lonesome Dove</h1>
+        <p>A chapter-by-chapter companion</p>
+        <button class="btn primary" id="startBtn">Ride out ▸</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog narrator" id="dialog" role="status" aria-live="polite">
+    <div class="portrait"><canvas id="portrait" width="64" height="64"></canvas><div class="name" id="speaker"></div></div>
+    <div class="text" id="text">Press “Ride out” to begin. Tap here or use Next to move through each chapter.</div>
+  </div>
+
+  <nav class="controls" aria-label="Story controls">
+    <button class="btn" id="prevBtn" aria-label="Previous">◂ Back</button>
+    <div class="pips" id="pips"></div>
+    <button class="btn primary" id="nextBtn">Next ▸</button>
+  </nav>
+</div>
+
+<div class="drawer" id="drawer" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="drawerTitle">
+    <h2 id="drawerTitle">Chapters</h2>
+    <p class="note">Chapters open as you reach them, so nothing ahead of your listening is spoiled. Scenes paraphrase the novel.</p>
+    <ul class="chlist" id="chlist"></ul>
+  </div>
+</div>
+
+<script src="js/art.js" charset="utf-8"></script>
+<script src="js/geo.js" charset="utf-8"></script>
+<script src="js/engine.js" charset="utf-8"></script>
+<script src="js/story.js" charset="utf-8"></script>
+<script src="js/part1.js" charset="utf-8"></script>
+<script src="js/part2.js" charset="utf-8"></script>
+<script src="js/app.js" charset="utf-8"></script>
