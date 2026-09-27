@@ -83,6 +83,7 @@
       }
       return { img: A.sprite.side(a.who, who.c, f), ax: 10, ay: 26, sw: 6 };
     }
+    if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
     if (a.kind === 'goat') return { img: A.sprite.goat(a.cfg || {}, a.moving ? Math.floor(a.dist / 3) % 2 : 0), ax: 8, ay: 12, sw: 4 };
     if (a.kind === 'chicken') return { img: A.sprite.chicken(a.cfg || {}, a.moving ? Math.floor(a.dist / 2) % 2 : 0), ax: 5, ay: 9, sw: 3 };
     if (a.kind === 'boat') return { img: A.sprite.boat(), ax: 43, ay: 27, sw: 0 };
@@ -100,14 +101,18 @@
     if (a.kind === 'human') return a.mount ? 30 : 20;
     if (a.kind === 'horse') return 30;
     if (a.kind === 'cow') return 16;
+    if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
     if (a.kind === 'goat') return { img: A.sprite.goat(a.cfg || {}, a.moving ? Math.floor(a.dist / 3) % 2 : 0), ax: 8, ay: 12, sw: 4 };
     if (a.kind === 'chicken') return { img: A.sprite.chicken(a.cfg || {}, a.moving ? Math.floor(a.dist / 2) % 2 : 0), ax: 5, ay: 9, sw: 3 };
     if (a.kind === 'boat') return { img: A.sprite.boat(), ax: 43, ay: 27, sw: 0 };
     if (a.kind === 'team') return 18;
     if (a.kind === 'boat') return 8;
+    if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
     if (a.kind === 'goat') return { img: A.sprite.goat(a.cfg || {}, a.moving ? Math.floor(a.dist / 3) % 2 : 0), ax: 8, ay: 12, sw: 4 };
     if (a.kind === 'chicken') return 12;
+    if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
     if (a.kind === 'goat') return 14;
+    if (a.kind === 'buffalo') return 20;
     if (a.kind === 'pig') return 14;
     return 10;
   }
@@ -181,7 +186,7 @@
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
     let cx, cy;
     if (x1 - x0 < W - m * 2 && y1 - y0 < H - m - mt) { cx = (x0 + x1) / 2; cy = (y0 + y1) / 2 + (mt - m) / 2 - 4; }
-    else { const p = pts[pts.length - 1]; cx = p[0]; cy = p[1]; }
+    else { const last = pts.slice(-3); cx = last.reduce((s, p) => s + p[0], 0) / last.length; cy = last.reduce((s, p) => s + p[1], 0) / last.length; }
     cx = Math.max(W / 2, Math.min(scene.w - W / 2, cx)); cy = Math.max(H / 2, Math.min(scene.h - H / 2, cy));
     return [cx, cy];
   }
@@ -306,6 +311,17 @@
       lctx.fillStyle = 'rgba(200,215,235,0.55)';
       const n = w.rain === 'heavy' ? 220 : 110;
       for (let i = 0; i < n; i++) { const x = (i * 73 + clock * 40) % (W + 20) - 10, y = ((i * 131) % H + clock * 260 + i * 7) % H; lctx.fillRect(Math.round(x), Math.round(y), 1, 4); }
+    }
+    if (w.hail) {
+      lctx.fillStyle = 'rgba(60,70,90,0.2)'; lctx.fillRect(0, 0, W, H);
+      lctx.fillStyle = 'rgba(245,250,255,0.95)';
+      for (let i = 0; i < 160; i++) { const x = (i * 71 + clock * 20) % W, y = ((i * 131) % H + clock * 330 + i * 11) % H; lctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
+      lctx.fillStyle = 'rgba(240,245,250,0.8)';
+      for (let i = 0; i < 90; i++) { const x = (i * 97) % W, y = (i * 53) % H; lctx.fillRect(x, y, 1, 1); }
+    }
+    if (w.hoppers) {
+      lctx.fillStyle = 'rgba(90,70,30,0.35)'; lctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 260; i++) { const x = (i * 83 + Math.sin(clock * 3 + i) * 12 + clock * 30) % W, y = ((i * 47) % H + Math.cos(clock * 2.5 + i) * 10 + H) % H; lctx.fillStyle = i % 3 ? '#6a5a2a' : '#9a8a3a'; lctx.fillRect(Math.round(x), Math.round(y), 2, 1); }
     }
     if (w.elmo) for (const a of actors()) if (a.kind === 'cow' && !a.hidden) {
       if ((Math.sin(clock * 5 + a.x) + 1) / 2 < 0.35) continue;
@@ -626,7 +642,7 @@
     if (s.flash) { if (!skipping) { scene.flashT = 0.2; await sleep(s.ms || 250); } return; }
     if (s.move) {
       const [dx, dy] = s.by;
-      for (const a of actors()) if (a.id.startsWith(s.move)) {
+      for (const a of actors()) if (a.id.startsWith(s.move) && !a.down) {
         a.wander = null; if (s.speed) a.speed = s.speed * (0.85 + Math.random() * 0.3);
         a.path = [[a.x + dx + (Math.random() - 0.5) * (s.jitter || 10), a.y + dy + (Math.random() - 0.5) * (s.jitter || 10)]];
         if (skipping) snap(a);

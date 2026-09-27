@@ -990,4 +990,5 @@
       ] },
     ],
   });
+  Object.assign(window.STORYKIT, { fortSmith, cabinClearing, woods, nueces, plainsRiver, redRiver, sanAntonio, hillPool, louisaFarm, PP });
 })();

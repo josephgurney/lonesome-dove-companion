@@ -249,6 +249,16 @@
     P.p(3 + (f % 2), 7, '#e0a030'); P.p(5 - (f % 2), 7, '#e0a030'); P.p(3 + (f % 2), 8, '#e0a030'); P.p(5 - (f % 2), 8, '#e0a030');
     return outline(C);
   }
+  function buffalo(k, f) {
+    const C = cv(38, 24), P = pen(C.getContext('2d')), oy = 3;
+    const c = k.coat || '#4a3222', dk = shade(c, -0.3), sh = shade(c, -0.15);
+    P.r(8, oy + 7, 16, 8, c); P.r(18, oy + 3, 9, 10, dk); P.r(20, oy + 1, 6, 3, dk); P.r(9, oy + 6, 12, 1, sh);
+    P.r(26, oy + 6, 5, 7, dk); P.r(29, oy + 11, 3, 3, '#2a1a10'); P.p(28, oy + 8, '#e8dcc0'); P.p(27, oy + 5, '#d8ccb0'); P.p(30, oy + 5, '#d8ccb0');
+    P.r(6, oy + 7, 2, 4, sh); P.p(5, oy + 10, '#2a1a10');
+    const sw = [[0, 0, 0, 0], [1, -1, -1, 1], [0, 0, 0, 0], [-1, 1, 1, -1]][f];
+    [10, 13, 21, 24].forEach((x, i) => { P.r(x + sw[i], oy + 15, 2, 4, i % 2 ? c : dk); P.r(x + sw[i], oy + 19, 2, 1, '#1a1008'); });
+    return outline(C);
+  }
   function goat(k, f) {
     const C = cv(16, 13), P = pen(C.getContext('2d'));
     const c = k.coat || '#e0dcd0', dk = shade(c, -0.25);
@@ -294,6 +304,7 @@
     bird: (f) => memo(`b:${f}`, () => buzzard(f)),
     chicken: (k, f) => memo(`ck:${k.coat}:${f}`, () => chicken(k, f)),
     boat: () => memo('boat', () => boat()),
+    buffalo: (k, f) => memo(`bf:${k.coat}:${f}`, () => buffalo(k, f)),
     goat: (k, f) => memo(`g:${k.coat}:${f}`, () => goat(k, f)),
     dillo: (f) => memo(`d:${f}`, () => dillo(f)),
   };
@@ -480,6 +491,35 @@
     stump(o) {
       const C = cv(12, 9), P = pen(C.getContext('2d'));
       P.r(2, 2, 8, 6, '#7a5234'); P.r(2, 2, 8, 2, '#c8a870'); P.r(4, 2, 3, 1, '#a88858'); P.r(0, 7, 3, 1, '#6a4428'); P.r(9, 7, 3, 1, '#6a4428');
+      return outline(C);
+    },
+    tent(o) {
+      const C = cv(34, 26), P = pen(C.getContext('2d'));
+      for (let y = 0; y < 22; y++) { const w = 4 + y * 1.3 | 0; P.r(17 - (w >> 1), y + 2, w, 1, y % 5 ? '#e8e0c8' : '#d4ccb2'); }
+      P.r(14, 12, 6, 12, o.open ? '#3a3024' : '#c8bea4'); P.r(16, 0, 2, 4, '#6e5234'); P.r(0, 23, 34, 1, '#a89c80');
+      return outline(C);
+    },
+    bones(o) { // a pyramid of buffalo bones
+      const w = o.w || 40, h = o.h || 30, C = cv(w, h), P = pen(C.getContext('2d')), r = rng(o.seed || 3);
+      for (let i = 0; i < w * h / 5; i++) { const y = r() * h | 0, half = (y / h) * w / 2, x = w / 2 + (r() - 0.5) * 2 * half; P.r(x | 0, y, 2 + (r() * 3 | 0), 1, r() < 0.5 ? '#efe8d8' : '#d8ccb4'); }
+      return outline(C);
+    },
+    skull(o) {
+      const C = cv(14, 10), P = pen(C.getContext('2d'));
+      P.r(4, 2, 6, 6, '#efe8d8'); P.r(1, 1, 3, 2, '#d8ccb4'); P.r(10, 1, 3, 2, '#d8ccb4'); P.p(5, 4, '#2a1a10'); P.p(8, 4, '#2a1a10'); P.r(5, 7, 4, 2, '#d8ccb4');
+      return outline(C);
+    },
+    boxcar(o) {
+      const C = cv(56, 30), P = pen(C.getContext('2d'));
+      P.r(2, 2, 52, 20, '#8a3a26'); P.r(2, 2, 52, 2, '#a84a30'); for (let x = 6; x < 52; x += 6) P.r(x, 4, 1, 18, '#6e2e1e');
+      P.r(20, 6, 14, 16, '#6e2e1e'); P.r(0, 22, 56, 2, '#2a2a2e'); [[10, 26], [46, 26]].forEach(([x, y]) => { P.r(x - 3, y - 3, 7, 6, '#2a2a2e'); P.r(x - 1, y - 1, 3, 3, '#6a6a70'); });
+      return outline(C);
+    },
+    soddy(o) { // sod house dug into a slope, grass on the roof
+      const C = cv(44, 30), P = pen(C.getContext('2d'));
+      P.r(0, 0, 44, 12, '#6e9a36'); P.r(0, 0, 44, 2, '#83b046'); for (let x = 1; x < 44; x += 3) P.p(x, 1, '#557f28');
+      for (let y = 12; y < 28; y += 4) { P.r(2, y, 40, 4, '#7a6044'); P.r(2, y + 3, 40, 1, '#5e4832'); }
+      P.r(18, 16, 8, 12, '#2a1e16'); P.r(30, 16, 6, 5, '#4d6b78');
       return outline(C);
     },
     tub(o) {
