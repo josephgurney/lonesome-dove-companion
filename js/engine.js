@@ -106,18 +106,9 @@
     if (a.kind === 'human') return a.mount ? 30 : 20;
     if (a.kind === 'horse') return 30;
     if (a.kind === 'cow') return 16;
-    if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
-    if (a.kind === 'bear') return { img: A.sprite.bear(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 20, ay: 25, sw: 13 };
-    if (a.kind === 'goat') return { img: A.sprite.goat(a.cfg || {}, a.moving ? Math.floor(a.dist / 3) % 2 : 0), ax: 8, ay: 12, sw: 4 };
-    if (a.kind === 'chicken') return { img: A.sprite.chicken(a.cfg || {}, a.moving ? Math.floor(a.dist / 2) % 2 : 0), ax: 5, ay: 9, sw: 3 };
-    if (a.kind === 'boat') return { img: A.sprite.boat(), ax: 43, ay: 27, sw: 0 };
     if (a.kind === 'team') return 18;
     if (a.kind === 'boat') return 8;
-    if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
-    if (a.kind === 'bear') return { img: A.sprite.bear(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 20, ay: 25, sw: 13 };
-    if (a.kind === 'goat') return { img: A.sprite.goat(a.cfg || {}, a.moving ? Math.floor(a.dist / 3) % 2 : 0), ax: 8, ay: 12, sw: 4 };
     if (a.kind === 'chicken') return 12;
-    if (a.kind === 'buffalo') return { img: A.sprite.buffalo(a.cfg || {}, a.moving ? Math.floor(a.dist / 4) % 4 : 0), ax: 18, ay: 23, sw: 12 };
     if (a.kind === 'goat') return 14;
     if (a.kind === 'buffalo') return 20;
     if (a.kind === 'bear') return 22;
