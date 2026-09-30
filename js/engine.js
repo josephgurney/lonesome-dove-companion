@@ -5,7 +5,7 @@
   const TARGET_W = 232;
   let stage, canvas, ctx, overlay, low, lctx, S = 4, W = 232, H = 174, dpr = 1;
   let scene = null, mode = 'scene', last = 0, clock = 0;
-  let runId = 0, skipping = false;
+  let runId = 0, skipping = false, paused = false;
   const timers = [];
   const ABORT = { abort: true };
 
@@ -34,6 +34,10 @@
   function flushTimers() { while (timers.length) timers.shift().res(); }
   E.skip = () => { skipping = true; flushTimers(); for (const a of actors()) if (a.path.length) snap(a); if (E.hooks.skip) E.hooks.skip(); };
   E.isSkipping = () => skipping;
+  E.wait = sleep;
+  // Freeze the scene (timers, walking, camera) while something covers it.
+  E.pause = (on) => { paused = !!on; };
+  E.paused = () => paused;
 
   /* ---------- scene ---------- */
   const actors = () => (scene ? scene.actors.values() : []);
@@ -512,7 +516,7 @@
       const pts = pathUpTo(tr.pts, tr.p).map((q) => tp(q[0], q[1]));
       if (pts.length > 1) { pline(lctx, pts.map(([x, y]) => [x - 0.5, y - 0.5]), tr.shadow || '#6a3a1a', 2); pline(lctx, pts, tr.col, 1, tr.dash || 0); }
       const head = pts[pts.length - 1];
-      if (head && tr.icon) drawIcon(tr.icon, head[0], head[1]);
+      if (head && tr.icon) drawIcon(tr.icon, head[0], head[1], lctx);
     }
     for (const pl of map.places) {
       const [x, y] = tp(pl.lon, pl.lat);
@@ -522,15 +526,15 @@
     // vignette frame
     lctx.fillStyle = 'rgba(80,40,10,0.25)'; lctx.fillRect(0, 0, W, 2); lctx.fillRect(0, H - 2, W, 2); lctx.fillRect(0, 0, 2, H); lctx.fillRect(W - 2, 0, 2, H);
   }
-  function drawIcon(k, x, y) {
+  function drawIcon(k, x, y, c, still) {
     x = Math.round(x); y = Math.round(y);
-    const bob = Math.floor(clock * 4) % 2;
+    const bob = still ? 0 : Math.floor(clock * 4) % 2;
     if (k === 'herd') {
       const cows = [[-6, 1], [-2, -1], [2, 1], [-4, 3], [1, 4], [5, -1]];
-      for (const [dx, dy] of cows) { lctx.fillStyle = '#2a1a10'; lctx.fillRect(x + dx - 1, y + dy - 1 + (bob && dx > 0 ? 1 : 0), 4, 3); lctx.fillStyle = dx % 4 ? '#8a4a2a' : '#e8dcc0'; lctx.fillRect(x + dx, y + dy + (bob && dx > 0 ? 1 : 0), 2, 1); }
-      lctx.fillStyle = '#efe6cf'; lctx.fillRect(x + 4, y - 3, 5, 1);
+      for (const [dx, dy] of cows) { c.fillStyle = '#2a1a10'; c.fillRect(x + dx - 1, y + dy - 1 + (bob && dx > 0 ? 1 : 0), 4, 3); c.fillStyle = dx % 4 ? '#8a4a2a' : '#e8dcc0'; c.fillRect(x + dx, y + dy + (bob && dx > 0 ? 1 : 0), 2, 1); }
+      c.fillStyle = '#efe6cf'; c.fillRect(x + 4, y - 3, 5, 1);
     } else {
-      lctx.fillStyle = '#2a1a10'; lctx.fillRect(x - 2, y - 5 - bob, 5, 6); lctx.fillStyle = k === 'rider2' ? '#3a6aa0' : '#c8402a'; lctx.fillRect(x - 1, y - 4 - bob, 3, 4);
+      c.fillStyle = '#2a1a10'; c.fillRect(x - 2, y - 5 - bob, 5, 6); c.fillStyle = k === 'rider2' ? '#3a6aa0' : '#c8402a'; c.fillRect(x - 1, y - 4 - bob, 3, 4);
     }
   }
   function mapLabels() {
@@ -557,6 +561,115 @@
     });
   }
 
+  /* ---------- "Where is everyone?": a still overview drawn into its own canvas ---------- */
+  // A character's head and hat (the top 15 rows of the front sprite, 20 wide), or the little herd for 'herd'.
+  function drawHead(c2, who, x, y, k) {
+    if (who === 'herd') { c2.save(); c2.translate(x, y); c2.scale(k, k); drawIcon('herd', 10, 8, c2, true); c2.restore(); return; }
+    const c = E.cast[who]; if (!c) return;
+    c2.drawImage(A.sprite.front(who, c.c, 0), 0, 0, 20, 15, x, y, 20 * k, 15 * k);
+  }
+  E.head = (canvasEl, who) => {
+    const c2 = canvasEl.getContext('2d'); c2.imageSmoothingEnabled = false; c2.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    const k = Math.max(1, Math.floor(Math.min(canvasEl.width / 20, canvasEl.height / 15)));
+    drawHead(c2, who, Math.round((canvasEl.width - 20 * k) / 2), Math.round((canvasEl.height - 15 * k) / 2), k);
+  };
+  const overlapArea = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  /* spots: [{ lon, lat, heads: [who], lines: [text] }] for the living; graves: [[lon, lat]]; home: { name, lon, lat }.
+     Spots that land close together share one badge. Labels are DOM, placed in `box` over the canvas. */
+  E.drawWhere = (cvs, box, o) => {
+    if (!baseMap) baseMap = buildBase();
+    const d = Math.min(window.devicePixelRatio || 1, 3), r = cvs.getBoundingClientRect();
+    const cw = Math.max(1, Math.round(r.width * d)), ch = Math.max(1, Math.round(r.height * d));
+    cvs.width = cw; cvs.height = ch;
+    // Frame every spot with room for badges and labels, and never less than a few hundred miles across.
+    const P = o.spots.map((s) => proj(s.lon, s.lat));
+    const xs = P.map((p) => p[0]), ys = P.map((p) => p[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    let w = Math.max(120, (x1 - x0) * 1.2 + 110), h = Math.max(90, (y1 - y0) * 1.15 + 70);
+    if (w / h < cw / ch) w = h * cw / ch; else h = w * ch / cw;
+    // Never look past the edge of the drawn map.
+    const fitIn = Math.min(1, MW / w, MH / h); w *= fitIn; h *= fitIn;
+    const cx = Math.max(w / 2, Math.min(MW - w / 2, (x0 + x1) / 2 + 12)), cy = Math.max(h / 2, Math.min(MH - h / 2, (y0 + y1) / 2 - 8));
+    // Chunky pixels, but never so chunky that the map itself has to shrink: thin rivers would break up.
+    const S2 = Math.max(1, Math.min(Math.round(cw / 240), Math.floor(cw / w), Math.floor(ch / h)));
+    const VW = Math.ceil(cw / S2), VH = Math.ceil(ch / S2), z = Math.min(VW / w, VH / h), k = Math.max(1, Math.round(VW / 300));
+    const L = Math.max(0, Math.min(MW - VW / z, cx - VW / z / 2)), Tp = Math.max(0, Math.min(MH - VH / z, cy - VH / z / 2)), css = S2 / d;
+    const tp = (lon, lat) => { const [x, y] = proj(lon, lat); return [Math.round((x - L) * z), Math.round((y - Tp) * z)]; };
+    const lo = A.cv(VW, VH), c2 = lo.getContext('2d');
+    c2.imageSmoothingEnabled = false;
+    c2.fillStyle = '#c9a66a'; c2.fillRect(0, 0, VW, VH);
+    c2.drawImage(baseMap, -L * z, -Tp * z, MW * z, MH * z);
+    box.textContent = '';
+    const tag = (cls, lines) => {
+      const el = document.createElement('div'); el.className = cls;
+      for (const t of lines) { const s = document.createElement('span'); s.textContent = t; el.appendChild(s); }
+      box.appendChild(el); return el;
+    };
+    const put = (el, x, y) => { el.style.transform = `translate(${Math.round(x * css)}px, ${Math.round(y * css)}px)`; };
+    // Territory names: the small ones only when zoomed in, and none on top of another.
+    const names = [];
+    for (const rg of G.regions) {
+      if (rg.minor && z * css < 2) continue;
+      const [x, y] = tp(rg.label[0], rg.label[1]); if (x < 0 || y < 0 || x > VW || y > VH) continue;
+      const el = tag('maplabel region', [rg.name]), q = { x: x - el.offsetWidth / css / 2, y: y - el.offsetHeight / css / 2, w: el.offsetWidth / css, h: el.offsetHeight / css };
+      if (names.some((n) => overlapArea(n, q) > 0)) { el.remove(); continue; }
+      names.push(q); put(el, q.x, q.y);
+    }
+    // Graves along the way.
+    for (const [lon, lat] of o.graves || []) {
+      const [x, y] = tp(lon, lat); if (x < 0 || y < 0 || x > VW || y > VH) continue;
+      c2.fillStyle = 'rgba(58,36,18,0.35)'; c2.fillRect(x - 2 * k, y + k, 5 * k, k);
+      c2.fillStyle = '#5a4630'; c2.fillRect(x, y - 4 * k, k, 5 * k); c2.fillRect(x - k, y - 3 * k, 3 * k, k);
+    }
+    const taken = [], inView = (x, y) => x >= 0 && y >= 0 && x <= VW && y <= VH;
+    // Cluster, then give each cluster a badge of faces and a label, placed where it covers the least.
+    const R = 6 * k, groups = [];
+    o.spots.forEach((s) => {
+      const [x, y] = tp(s.lon, s.lat);
+      const g = groups.find((q) => Math.hypot(q.x - x, q.y - y) < R);
+      if (g) { g.heads.push(...s.heads); g.lines.push(...s.lines); } else groups.push({ x, y, heads: [...s.heads], lines: [...s.lines] });
+    });
+    for (const g of groups) { g.heads = [...new Set(g.heads)].slice(0, 4); taken.push({ x: g.x - 3 * k, y: g.y - 3 * k, w: 6 * k, h: 6 * k }); }
+    if (o.home) {
+      const [x, y] = tp(o.home.lon, o.home.lat);
+      if (inView(x, y)) {
+        c2.fillStyle = '#2a1a10'; c2.fillRect(x - 2 * k, y - 2 * k, 5 * k, 5 * k); c2.fillStyle = '#c8402a'; c2.fillRect(x - k, y - k, 3 * k, 3 * k);
+        const el = tag('maplabel home', [o.home.name]), lw = el.offsetWidth / css, lh = el.offsetHeight / css;
+        const lx = x + 5 * k + lw > VW ? x - 5 * k - lw : x + 5 * k, ly = Math.max(2, Math.min(VH - lh - 2, y - lh / 2));
+        put(el, lx, ly); taken.push({ x: lx, y: ly, w: lw, h: lh });
+      }
+    }
+    const gap = 5 * k, pad = 2 * k;
+    for (const g of groups) {
+      const bw = (13 * (g.heads.length - 1) + 20) * k + 2 * k, bh = 17 * k;
+      const el = tag('wlabel', g.lines), lw = el.offsetWidth / css, lh = el.offsetHeight / css;
+      const at = [[-bw / 2, -gap - bh], [-bw / 2, gap], [gap, -bh / 2], [-gap - bw, -bh / 2], [gap / 2, -gap - bh], [-gap / 2 - bw, -gap - bh], [gap / 2, gap], [-gap / 2 - bw, gap], [-bw / 2, -3 * gap - bh], [-bw / 2, 3 * gap]];
+      let best = null;
+      at.forEach(([dx, dy], i) => {
+        for (const side of [1, -1]) {
+          const bx = g.x + dx, by = g.y + dy, lx = side > 0 ? bx + bw + pad : bx - pad - lw, ly = by + bh / 2 - lh / 2;
+          const u = { x: Math.min(bx, lx), y: Math.min(by, ly), w: bw + pad + lw, h: Math.max(bh, lh) };
+          const out = u.w * u.h - overlapArea(u, { x: 0, y: 0, w: VW, h: VH });
+          const score = taken.reduce((s, q) => s + overlapArea(u, q), 0) + out * 3 + i * 4 + (side < 0 ? 2 : 0);
+          if (!best || score < best.score) best = { score, bx, by, lx, ly, u };
+        }
+      });
+      taken.push(best.u);
+      const { bx, by } = best;
+      // Leader from the true spot to the badge, then the badge, then the spot itself on top.
+      const qx = Math.max(bx, Math.min(bx + bw, g.x)), qy = Math.max(by, Math.min(by + bh, g.y));
+      pline(c2, [[g.x, g.y], [qx, qy]], '#3a2412', k);
+      c2.fillStyle = '#2a1a10'; c2.fillRect(Math.round(bx), Math.round(by), Math.round(bw), Math.round(bh));
+      c2.fillStyle = '#f4dcaa'; c2.fillRect(Math.round(bx) + k, Math.round(by) + k, Math.round(bw) - 2 * k, Math.round(bh) - 2 * k);
+      g.heads.forEach((who, i) => drawHead(c2, who, Math.round(bx) + k + i * 13 * k, Math.round(by) + k, k));
+      c2.fillStyle = '#2a1a10'; c2.fillRect(g.x - 2 * k, g.y - 2 * k, 4 * k, 4 * k); c2.fillStyle = '#f7c96a'; c2.fillRect(g.x - k, g.y - k, 2 * k, 2 * k);
+      put(el, best.lx, best.ly);
+    }
+    c2.fillStyle = 'rgba(80,40,10,0.25)'; c2.fillRect(0, 0, VW, 2); c2.fillRect(0, VH - 2, VW, 2); c2.fillRect(0, 0, 2, VH); c2.fillRect(VW - 2, 0, 2, VH);
+    const out = cvs.getContext('2d'); out.imageSmoothingEnabled = false; out.drawImage(lo, 0, 0, VW * S2, VH * S2);
+    return { groups: groups.length, scale: S2, zoom: z };
+  };
+
   /* ---------- iris transition ---------- */
   const iris = { r: 1, tween: null };
   function irisTo(r, ms) { return new Promise((res) => { if (skipping || reduceMotion) { iris.r = r; return res(); } iris.tween = { a: iris.r, b: r, t: 0, ms, res }; }); }
@@ -571,6 +684,7 @@
   /* ---------- loop ---------- */
   function loop(ts) {
     const real = Math.min(1, Math.max(0, (ts - last) / 1000 || 0)); last = ts;
+    if (paused) { requestAnimationFrame(loop); return; }
     const dt = Math.min(0.1, real);
     update(dt, real);
     if (mode === 'map') drawMap(); else if (scene) drawScene();
