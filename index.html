@@ -107,7 +107,12 @@
   .pip.done { background: var(--paper-3); }
   .pip.now { background: #f7c96a; box-shadow: inset 0 0 0 2px var(--wood-0), 0 0 0 2px #f7c96a55; }
 
-  .chapterbtn { max-width: 58%; }
+  .baractions { display: flex; gap: 8px; min-width: 0; max-width: 70%; }
+  .chapterbtn { min-width: 0; }
+  .wherebtn { flex: none; padding: 9px 11px; }
+  .wherebtn svg { width: 20px; height: 20px; flex: none; }
+  .wherebtn .lbl { display: none; }
+  @media (min-width: 440px) { .wherebtn .lbl { display: inline; } }
   .chapterbtn .n { font-family: var(--western); font-weight: 400; font-size: 14px; }
   .chapterbtn .t { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -127,6 +132,29 @@
   .chlist button[disabled] { opacity: .5; cursor: default; }
   .chlist .draftflag { font-size: 11px; color: var(--sage); text-transform: uppercase; letter-spacing: .08em; }
 
+  /* where is everyone? */
+  .sheethead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .sheethead h2 { margin: 0; }
+  .closebtn { flex: none; justify-content: center; min-width: 44px; padding: 9px 12px; }
+  .wheremap { position: relative; width: 100%; aspect-ratio: 5 / 4; max-height: 54vh; margin: 2px 0 14px; background: #c9a66a; border-radius: 3px; overflow: hidden;
+    box-shadow: 0 0 0 2px var(--wood-2), 0 0 0 4px var(--paper-3); }
+  .wheremap canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+  .wherelabels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .wlabel { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 12px; font-weight: 700; line-height: 1.2; color: var(--ink);
+    background: rgba(244,220,170,.92); padding: 2px 5px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(58,36,18,.55); }
+  .wlabel span { display: block; }
+  .maplabel.home { font-family: var(--western); font-size: 11px; letter-spacing: .04em; color: var(--rust); text-shadow: 0 1px 0 rgba(244,220,170,.8); }
+  .wherelist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .wherelist li { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; background: var(--paper-2); border-radius: 3px; padding: 7px 10px;
+    box-shadow: inset 0 0 0 2px var(--paper-3); }
+  .wherelist li.section { display: block; background: none; box-shadow: none; padding: 10px 0 0; font-family: var(--western); font-size: 15px; color: var(--ink-soft); }
+  .wherelist canvas { width: 40px; height: 30px; image-rendering: pixelated; }
+  .wherelist b { display: block; font-size: 15px; }
+  .wherelist .sub { display: block; font-size: 12.5px; color: var(--ink-soft); }
+  .wherelist .who { display: block; font-size: 12.5px; margin-top: 2px; }
+  .wherelist li.gone { background: #e6d2a8; }
+  .wherelist li.gone canvas { filter: grayscale(1); opacity: .6; }
+
   /* title card */
   .titlecard { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center;
     background: radial-gradient(ellipse at center, rgba(28,17,11,.35), rgba(28,17,11,.85)); padding-inline: 16px; }
@@ -139,9 +167,19 @@
 <div class="app">
   <header class="bar">
     <div class="brand">Lonesome Dove<small>Trail companion</small></div>
-    <button class="btn chapterbtn" id="chapterBtn" aria-haspopup="dialog">
-      <span class="n" id="chN">Ch. 1</span><span class="t" id="chT"></span>
-    </button>
+    <div class="baractions">
+      <button class="btn wherebtn" id="whereBtn" aria-haspopup="dialog" aria-label="Where is everyone?" title="Where is everyone?">
+        <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
+          <path fill="#3a2412" d="M0 2h6v1h4V2h6v13h-6v-1H6v1H0z"/>
+          <path fill="#f4dcaa" d="M1 3h4v11H1z"/><path fill="#d6ad6a" d="M6 3h4v10H6z"/><path fill="#f4dcaa" d="M11 3h4v11h-4z"/>
+          <path fill="#5f8fae" d="M1 6h2v1h2v1H1zM11 9h2v1h2v1h-4z"/><path fill="#7a5230" d="M3 11h1v1H3zM5 10h1v1H5zM7 9h1v1H7zM9 8h1v1H9zM11 6h1v1h-1z"/>
+          <path fill="#b8452a" d="M12 4h2v1h1v1h-1v1h-2V6h-1V5h1z"/>
+        </svg><span class="lbl">Map</span>
+      </button>
+      <button class="btn chapterbtn" id="chapterBtn" aria-haspopup="dialog">
+        <span class="n" id="chN">Ch. 1</span><span class="t" id="chT"></span>
+      </button>
+    </div>
   </header>
 
   <div class="frame">
@@ -177,6 +215,18 @@
   </div>
 </div>
 
+<div class="drawer" id="whereDrawer" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="whereTitle">
+    <div class="sheethead">
+      <h2 id="whereTitle">Where is everyone?</h2>
+      <button class="btn closebtn" id="whereClose" aria-label="Close the map">✕</button>
+    </div>
+    <p class="note" id="whereNote"></p>
+    <div class="wheremap"><canvas id="whereMap"></canvas><div class="wherelabels" id="whereLabels"></div></div>
+    <ul class="wherelist" id="whereList" aria-label="Who is where"></ul>
+  </div>
+</div>
+
 <script src="js/art.js" charset="utf-8"></script>
 <script src="js/geo.js" charset="utf-8"></script>
 <script src="js/engine.js" charset="utf-8"></script>
@@ -185,6 +235,7 @@
 <script src="js/part2.js" charset="utf-8"></script>
 <script src="js/part2b.js" charset="utf-8"></script>
 <script src="js/part3.js" charset="utf-8"></script>
+<script src="js/whereabouts.js" charset="utf-8"></script>
 <script src="js/app.js" charset="utf-8"></script>
 <script>
   // Offline support when installed from its own web address (not inside the Claude viewer).

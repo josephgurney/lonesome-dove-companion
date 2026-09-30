@@ -14,6 +14,8 @@ python3 -m http.server 8731
 
 Add `#c12` (or `#c12b2` for a specific moment) to jump to a chapter.
 
+The map button in the header opens **Where is everyone?**: an overview map of where each storyline has got to by the point you've reached, with a list of who is where, whose whereabouts are unknown, and who has been laid to rest. It never shows anything past where you are.
+
 ## Layout
 
 - `index.html`: page, styles and UI
@@ -22,5 +24,6 @@ Add `#c12` (or `#c12b2` for a specific moment) to jump to a chapter.
 - `js/geo.js`: simplified 1870s map data
 - `js/story.js`: cast, horses and chapters 1–6
 - `js/part1.js`, `js/part2.js`, `js/part2b.js`, `js/part3.js`: chapters 7–25, 26–49, 50–74 and 75–102
-- `js/app.js`: navigation, dialogue box, chapter list, saved progress
+- `js/whereabouts.js`: where every character is, chapter by chapter, for the "Where is everyone?" map
+- `js/app.js`: navigation, dialogue box, chapter list, the map sheet, saved progress
 - `research/`: chapter-by-chapter outline (`chapters.json`, `chapters.md`), routes and sources. **The outline covers the whole book, so it contains spoilers.** The novel's text itself is not committed.
